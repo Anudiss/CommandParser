@@ -1,0 +1,31 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.3.32922.545
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandParser", "CommandParser\CommandParser.csproj", "{B8EFE4CA-E833-44C4-B446-FB3FB7E88C5B}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "CommandParserTest", "CommandParserTest\CommandParserTest.csproj", "{FB9AB32A-E7BB-46F8-8BAF-E917647BEBFD}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{B8EFE4CA-E833-44C4-B446-FB3FB7E88C5B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B8EFE4CA-E833-44C4-B446-FB3FB7E88C5B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B8EFE4CA-E833-44C4-B446-FB3FB7E88C5B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B8EFE4CA-E833-44C4-B446-FB3FB7E88C5B}.Release|Any CPU.Build.0 = Release|Any CPU
+		{FB9AB32A-E7BB-46F8-8BAF-E917647BEBFD}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{FB9AB32A-E7BB-46F8-8BAF-E917647BEBFD}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{FB9AB32A-E7BB-46F8-8BAF-E917647BEBFD}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{FB9AB32A-E7BB-46F8-8BAF-E917647BEBFD}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {03DC1830-3558-4DB5-B8FF-03F2C814F721}
+	EndGlobalSection
+EndGlobal
