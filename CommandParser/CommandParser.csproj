@@ -45,6 +45,7 @@
     <Compile Include="ArgumentType.cs" />
     <Compile Include="Command.cs" />
     <Compile Include="Flag.cs" />
+    <Compile Include="LinqExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

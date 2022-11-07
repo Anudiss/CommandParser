@@ -21,7 +21,7 @@ namespace CommandParser
         /// <summary>
         /// Предикат, проверяющий на правильность ввода аргумента
         /// </summary>
-        public Predicate<string> IsValid { get; set; }
+        public bool IsValid(string argument) => Regex.IsMatch(argument.Trim());
 
         /// <summary>
         /// Делегат парсинга аргумента
