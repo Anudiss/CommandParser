@@ -77,7 +77,7 @@ namespace CommandParser
         /// <returns>Сущность команды с аргументами, их значениями и флагами</returns>
         public static Command ParseCommand(this IEnumerable<CommandEntity> commands, string commandToParse)
         {
-            string[] commandParts = Regex.Split(commandToParse.Trim(), @"\s+");
+            string[] commandParts = Regex.Split(commandToParse.Trim().ToLower(), @"\s+");
             string commandName = commandParts[0];
 
             CommandEntity entity = commands.FirstOrDefault(command => command.Synonyms.Contains(commandName));
@@ -105,6 +105,8 @@ namespace CommandParser
         {
             string[] arguments = commadParts.Where(part => !Regex.IsMatch(part, @"-{1,2}\w*"))
                                             .ToArray();
+            if (arguments.Length < commandEntity.Arguments.Where(argument => argument.IsRequired).Count())
+                throw new CommandArgumentException(commandEntity);
 
             Dictionary<string, object> argumentValues = new Dictionary<string, object>();
             for (int i = 0; i < arguments.Length; i++)
@@ -149,7 +151,7 @@ namespace CommandParser
         public override string Message { get; }
 
         public CommandArgumentException(CommandEntity commandEntity) =>
-            Message = $"Невеное использование команды\nОжидалось: {commandEntity.Synonyms[0]} {string.Join(" ", commandEntity.Arguments.Select(argument => $"{argument.Name}"))}";
+            Message = $"Невеное использование команды\nОжидалось: {commandEntity.Synonyms[0]} {string.Join(" ", commandEntity.Arguments.Select(argument => $"{argument.Name}:{argument.ArgumentType.Name}"))}";
     }
 
     /// <summary>

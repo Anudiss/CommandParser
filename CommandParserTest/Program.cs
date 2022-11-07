@@ -65,7 +65,7 @@ namespace CommandParserTest
                 }
             };
 
-            Command command = entities.ParseCommand("  h   --dick  43  98,4 -d ");
+            Command command = entities.ParseCommand("  HelP   --dick  43  -d  48,231 --dick Alex    -dick");
             Console.WriteLine($"Arguments: {string.Join(", ", command.Arguments.Select(argument => $"{argument.Key}:{argument.Value}"))}\nFlags: {string.Join(", ", command.Flags.Select(flag => flag.Name))}");
         }
     }
