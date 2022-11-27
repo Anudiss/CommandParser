@@ -1,4 +1,5 @@
-﻿using CommandParser;
+﻿using CommandParser.Command;
+using CommandParser.Hints;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,24 +9,36 @@ namespace CommandParserTest
 {
     public class Program
     {
+        /*
+         * ^[^\[\]]*(((?'Open'\[)[^\[\]]*)+((?'Array-Open'\])[^\[\]]*)+)*(?(Open)(?!))$ - array pattern
+         * ([\u0022](?<Text>[^\u0022]*)[\u0022]) - string pattern
+         */
         static void Main(string[] args)
         {
+            Dictionary<HintPart, ConsoleColor> ColorScheme = new Dictionary<HintPart, ConsoleColor>()
+            {
+                { HintPart.CommandName, ConsoleColor.Blue },
+                { HintPart.ArgumentType, ConsoleColor.Yellow },
+                { HintPart.RequiredArgument, ConsoleColor.DarkRed },
+                { HintPart.NotRequiredArgument, ConsoleColor.Magenta }
+            };
+
             ArgumentType Int = new ArgumentType()
             {
                 Name = "int",
-                Regex = new Regex(@"\d+", RegexOptions.Compiled),
+                ArgumentParsingRegex = new Regex(@"\d+", RegexOptions.Compiled),
                 Parse = (argument) => int.Parse(argument)
             };
             ArgumentType Double = new ArgumentType()
             {
                 Name = "double",
-                Regex = new Regex(@"\d+(\,\d+)?", RegexOptions.Compiled),
-                Parse = (argument) => double.Parse(argument)
+                ArgumentParsingRegex = new Regex(@"\d+(\,\.\d+)?", RegexOptions.Compiled),
+                Parse = (argument) => double.Parse(argument.Replace('.', ','))
             };
             ArgumentType String = new ArgumentType()
             {
                 Name = "string",
-                Regex = new Regex(@".*", RegexOptions.Compiled),
+                ArgumentParsingRegex = new Regex(@".*", RegexOptions.Compiled),
                 Parse = (argument) => argument
             };
 
@@ -35,10 +48,16 @@ namespace CommandParserTest
                 {
                     Synonyms = new[] { "help", "h" },
                     Flags = new[]
-                    { new Flag()
+                    {
+                        new Flag()
                         {
                             Name = "dick",
                             Shortname = "d"
+                        },
+                        new Flag()
+                        {
+                            Name = "help",
+                            Shortname = "h"
                         }
                     },
                     Arguments = new[]
@@ -61,12 +80,36 @@ namespace CommandParserTest
                             IsRequired = false,
                             ArgumentType = String
                         }
+                    },
+                    CommandExecutor = (arguments, flags) =>
+                    {
+                        Console.WriteLine(string.Join(", ", arguments.Select(arg => $"{arg.Key} {arg.Value}")));
+                        Console.WriteLine(string.Join(", ", flags.Select(flag => $"{flag.Name}")));
                     }
                 }
             };
 
-            Command command = entities.ParseCommand("  HelP   --dick  43  -d  48,231 --dick Alex    -dick");
-            Console.WriteLine($"Arguments: {string.Join(", ", command.Arguments.Select(argument => $"{argument.Key}:{argument.Value}"))}\nFlags: {string.Join(", ", command.Flags.Select(flag => flag.Name))}");
+            Hint hint = new Hint(entities[0]);
+            foreach (var unit in hint.HintUnits)
+            {
+                Console.ResetColor();
+                if (unit.HasDependecy)
+                {
+                    Console.ForegroundColor = ColorScheme[unit.Dependency.HintPart];
+                    Console.Write($"{unit.Dependency.Value}::");
+                }
+
+                Console.ForegroundColor = ColorScheme[unit.HintPart];
+                Console.Write($"{unit.Value} ");
+            }
+        }
+
+        public static string ParseHintUnit(HintUnit unit)
+        {
+            if (unit.HasDependecy)
+                return $"{unit.Dependency.Value} {unit.Value}";
+
+            return unit.Value;
         }
     }
 }

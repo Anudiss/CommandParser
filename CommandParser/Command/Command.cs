@@ -3,8 +3,17 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 
-namespace CommandParser
+namespace CommandParser.Command
 {
+    #region Делегат исполения команды
+    /// <summary>
+    /// Делегат выполнения команды
+    /// </summary>
+    /// <param name="arguments">Словарь: название аргумента - его значение</param>
+    /// <param name="flags">Флаги, введёные пользователем</param>
+    public delegate void CommandExecutHandler(Dictionary<string, object> arguments, Flag[] flags);
+    #endregion
+    #region Сущность команды
     /// <summary>
     /// Класс структуры команды
     /// </summary>
@@ -41,8 +50,14 @@ namespace CommandParser
         /// Флаги, принимаемые командой
         /// </summary>
         public Flag[] Flags { get; set; }
-    }
 
+        /// <summary>
+        /// Метод выполнения команды
+        /// </summary>
+        public CommandExecutHandler CommandExecutor { get; set; }
+    }
+    #endregion
+    #region Команда
     /// <summary>
     /// Класс команды
     /// </summary>
@@ -56,19 +71,80 @@ namespace CommandParser
         /// <summary>
         /// Словарь, содержащий имя агрумента и его значения
         /// </summary>
-        public Dictionary<string, object> Arguments { get; set; }
+        private Dictionary<string, object> Arguments { get; set; }
 
         /// <summary>
         /// Флаги, содержащиеся в команде
         /// </summary>
         public Flag[] Flags { get; set; }
-    }
 
+        /// <summary>
+        /// Метод, вызывающий CommandExecutor
+        /// </summary>
+        public void Execute() =>
+            CommandEntity.CommandExecutor?.Invoke(Arguments, Flags);
+
+        /// <summary>
+        /// Метод проверки на наличие флага в команде
+        /// </summary>
+        /// <param name="flag">Проверяемый флаг</param>
+        /// <returns>true, если флаг есть в команде, иначе false</returns>
+        public bool HasFlag(Flag flag) => Flags.Contains(flag);
+
+        /// <summary>
+        /// Метод, который возвращает значение аргумента по имени аргумента
+        /// </summary>
+        /// <param name="argumentName">Имя аргумента</param>
+        /// <returns>Значение аргумента</returns>
+        /// <exception cref="ArgumentOutOfRangeException">Такого аргумента нет в команде</exception>
+        public object GetArgumentValue(string argumentName)
+        {
+            if (Arguments.TryGetValue(argumentName, out object argument) == false)
+                throw new ArgumentOutOfRangeException("Такого аргумента нет в команде");
+            return argument;
+        }
+
+        /// <summary>
+        /// Индексатор, который возвращает значение аргумента по имени агрумента
+        /// </summary>
+        /// <param name="argumentName">Имя аргумента</param>
+        /// <returns>Значение аргумента</returns>
+        public object this[string argumentName] => GetArgumentValue(argumentName);
+
+        /// <summary>
+        /// Индексатор, который возвращает наличие флага в команде
+        /// </summary>
+        /// <param name="flag">Флаг для проверки</param>
+        /// <returns>Наличие флага</returns>
+        public bool this[Flag flag]
+        {
+            get
+            {
+                return HasFlag(flag);
+            }
+        }
+
+        /// <summary>
+        /// Конструктор команды
+        /// </summary>
+        /// <param name="commandEntity">Сущность команды</param>
+        /// <param name="arguments">Введённые агрументы</param>
+        /// <param name="flags">Флаги, используемые в команде</param>
+        public Command(CommandEntity commandEntity, Dictionary<string, object> arguments, Flag[] flags)
+        {
+            CommandEntity = commandEntity;
+            Arguments = arguments;
+            Flags = flags;
+        }
+    }
+    #endregion
+    #region Парсер команды
     /// <summary>
     /// Класс парсинга команд
     /// </summary>
     public static class CommandParser
     {
+        // TODO: Add text with spacing parsing
         /// <summary>
         /// Метод парсинга команды
         /// </summary>
@@ -87,12 +163,7 @@ namespace CommandParser
             Flag[] flags = entity.ParseFlags(commandParts.Skip(1));
             Dictionary<string, object> arguments = entity.ParseArguments(commandParts.Skip(1));
 
-            return new Command()
-            {
-                Arguments = arguments,
-                CommandEntity = entity,
-                Flags = flags
-            };
+            return new Command(entity, arguments, flags);
         }
         
         /// <summary>
@@ -103,6 +174,9 @@ namespace CommandParser
         /// <returns>Словарь: имя аргумента - значение</returns>
         private static Dictionary<string, object> ParseArguments(this CommandEntity commandEntity, IEnumerable<string> commadParts)
         {
+            if (commandEntity.Arguments == null)
+                return null;
+
             string[] arguments = commadParts.Where(part => !Regex.IsMatch(part, @"-{1,2}\w*"))
                                             .ToArray();
             if (arguments.Length < commandEntity.Arguments.Where(argument => argument.IsRequired).Count())
@@ -125,13 +199,17 @@ namespace CommandParser
         /// <returns>Массив флагов</returns>
         private static Flag[] ParseFlags(this CommandEntity commandEntity, IEnumerable<string> commandPart)
         {
+            if (commandEntity.Flags == null)
+                return null;
+
             return (from part in commandPart
                     from flag in commandEntity.Flags
                     where flag.Regex.IsMatch(part)
-                    select flag).ToArray();
+                    select flag).Distinct().ToArray();
         }
     }
-
+    #endregion
+    #region Исключения
     /// <summary>
     /// Исключение неизвестной команды
     /// </summary>
@@ -183,4 +261,5 @@ namespace CommandParser
         public ArgumentNameException(params Argument[] arguments) =>
             Message = $"Аргументы с именами {string.Join(", ", arguments.Select(argument => argument.Name))} уже есть в этой команде";
     }
+    #endregion
 }

@@ -41,10 +41,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Argument.cs" />
-    <Compile Include="ArgumentType.cs" />
-    <Compile Include="Command.cs" />
-    <Compile Include="Flag.cs" />
+    <Compile Include="Command\Argument.cs" />
+    <Compile Include="Command\ArgumentType.cs" />
+    <Compile Include="Command\BaseArgumentTypes.cs" />
+    <Compile Include="Command\Command.cs" />
+    <Compile Include="Command\Flag.cs" />
+    <Compile Include="Hints\Hint.cs" />
     <Compile Include="LinqExtensions.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

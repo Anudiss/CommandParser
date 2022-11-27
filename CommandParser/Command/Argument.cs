@@ -1,7 +1,6 @@
-﻿using System;
-using System.Text.RegularExpressions;
+﻿using System.Text.RegularExpressions;
 
-namespace CommandParser
+namespace CommandParser.Command
 {
     /// <summary>
     /// Класс аргумента
@@ -22,11 +21,6 @@ namespace CommandParser
         /// Является ли аргумент обязательным
         /// </summary>
         public bool IsRequired { get; set; }
-
-        /// <summary>
-        /// Регулярное выражение для парсинга аргумента
-        /// </summary>
-        public Regex Regex => ArgumentType.Regex;
 
         /// <summary>
         /// Метод преобразования строкового аргумента в нужный тип

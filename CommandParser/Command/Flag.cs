@@ -1,6 +1,6 @@
 ﻿using System.Text.RegularExpressions;
 
-namespace CommandParser
+namespace CommandParser.Command
 {
     /// <summary>
     /// Класс флага

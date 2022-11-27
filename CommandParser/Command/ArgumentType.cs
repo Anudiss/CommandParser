@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text.RegularExpressions;
 
-namespace CommandParser
+namespace CommandParser.Command
 {
     /// <summary>
     /// Класс типа агрумента
@@ -16,16 +16,26 @@ namespace CommandParser
         /// <summary>
         /// Регулярное выражение для парсинга агрумента
         /// </summary>
-        public Regex Regex { get; set; }
+        public Regex ArgumentParsingRegex { get; set; }
 
         /// <summary>
         /// Предикат, проверяющий на правильность ввода аргумента
         /// </summary>
-        public bool IsValid(string argument) => Regex.IsMatch(argument.Trim());
+        public bool IsValid(string argument) => ArgumentParsingRegex.IsMatch(argument.Trim()) && Validator?.Invoke(argument.Trim()) == true;
 
         /// <summary>
-        /// Делегат парсинга аргумента
+        /// Метод парсинга аргумента
         /// </summary>
         public Func<string, object> Parse { get; set; }
+
+        /// <summary>
+        /// Предикат валидации агрумента
+        /// </summary>
+        public Predicate<object> Validator { get; set; }
+    }
+
+    public class ArrayArgument
+    {
+        public object[] Array { get; set; }
     }
 }
