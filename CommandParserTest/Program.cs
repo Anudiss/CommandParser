@@ -66,19 +66,19 @@ namespace CommandParserTest
                         {
                             Name = "age",
                             IsRequired = true,
-                            ArgumentType = Int
+                            ArgumentType = BaseArgumentTypes.Int
                         },
                         new Argument()
                         {
                             Name = "height",
                             IsRequired = true,
-                            ArgumentType = Double
+                            ArgumentType = BaseArgumentTypes.Double
                         },
                         new Argument()
                         {
                             Name = "name",
                             IsRequired = false,
-                            ArgumentType = String
+                            ArgumentType = BaseArgumentTypes.String
                         }
                     },
                     CommandExecutor = (arguments, flags) =>
@@ -89,7 +89,11 @@ namespace CommandParserTest
                 }
             };
 
-            Hint hint = new Hint(entities[0]);
+            string input = Console.ReadLine();
+            Command command = entities.ParseCommand(input);
+            command.Execute();
+
+            Hint hint = new Hint(command.CommandEntity);
             foreach (var unit in hint.HintUnits)
             {
                 Console.ResetColor();

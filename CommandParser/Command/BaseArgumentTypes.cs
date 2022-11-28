@@ -15,7 +15,7 @@ namespace CommandParser.Command
         public static ArgumentType String = new ArgumentType()
         {
             Name = "String",
-            ArgumentParsingRegex = new Regex(@"(?<Text>[^\u0022]+)|([\u0022](?<Text>[^\u0022]*)[\u0022])", RegexOptions.Compiled),
+            ArgumentParsingRegex = new Regex(@".+", RegexOptions.Compiled),
             Parse = (arg) => arg.ToString(),
             Validator = (arg) => true
         };

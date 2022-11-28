@@ -71,7 +71,7 @@ namespace CommandParser.Command
         /// <summary>
         /// Словарь, содержащий имя агрумента и его значения
         /// </summary>
-        private Dictionary<string, object> Arguments { get; set; }
+        public Dictionary<string, object> Arguments { get; set; }
 
         /// <summary>
         /// Флаги, содержащиеся в команде
@@ -144,7 +144,10 @@ namespace CommandParser.Command
     /// </summary>
     public static class CommandParser
     {
-        // TODO: Add text with spacing parsing
+        #region Паттерны
+        public static Regex TokenPattern = new Regex(@"(?:\s*(?:([\u0022](?<Text>[^\u0022]*)[\u0022])\s*)|(?:\s*(?<Text>[^\s]+)\s*))+", RegexOptions.Compiled);
+        #endregion
+
         /// <summary>
         /// Метод парсинга команды
         /// </summary>
@@ -153,19 +156,32 @@ namespace CommandParser.Command
         /// <returns>Сущность команды с аргументами, их значениями и флагами</returns>
         public static Command ParseCommand(this IEnumerable<CommandEntity> commands, string commandToParse)
         {
-            string[] commandParts = Regex.Split(commandToParse.Trim().ToLower(), @"\s+");
-            string commandName = commandParts[0];
+            // Text regex - @"(?<Text>[^\u0022]+)|([\u0022](?<Text>[^\u0022]*)[\u0022])"
+            // Array regex - ^[^\[\]]*(((?'Open'\[)[^\[\]]*)+((?'Array-Open'\])[^\[\]]*)+)*(?(Open)(?!))$
 
-            CommandEntity entity = commands.FirstOrDefault(command => command.Synonyms.Contains(commandName));
-            if (entity == default)
+            var tokens = DoLexicalAnalyze(commandToParse.Trim());
+            string commandName = tokens.FirstOrDefault();
+            if (commandName == null)
+                throw new EmptyCommandException();
+
+            CommandEntity entity = commands.FirstOrDefault(e => e.Synonyms.Contains(commandName));
+            if (entity == null)
                 throw new UnknownCommandException(commandName);
 
-            Flag[] flags = entity.ParseFlags(commandParts.Skip(1));
-            Dictionary<string, object> arguments = entity.ParseArguments(commandParts.Skip(1));
-
-            return new Command(entity, arguments, flags);
+            return new Command(
+                commandEntity: entity,
+                arguments: ParseArguments(entity, tokens.Skip(1)),
+                flags: ParseFlags(entity, tokens.Skip(1)));
         }
-        
+
+        /// <summary>
+        /// Разделяет команду на составляющие части
+        /// </summary>
+        /// <param name="command">Строковая команда</param>
+        /// <returns>Перечисление, состоящее из частей команды</returns>
+        public static IEnumerable<string> DoLexicalAnalyze(string command) =>
+            TokenPattern.Match(command).Groups["Text"].Captures.Cast<Capture>().Select(capture => capture.Value.Trim());
+
         /// <summary>
         /// Метод парсинга аргументов из команды в строковом формате
         /// </summary>
@@ -177,7 +193,7 @@ namespace CommandParser.Command
             if (commandEntity.Arguments == null)
                 return null;
 
-            string[] arguments = commadParts.Where(part => !Regex.IsMatch(part, @"-{1,2}\w*"))
+            string[] arguments = commadParts.Where(part => !Regex.IsMatch(part, @"-{1,2}\w+"))
                                             .ToArray();
             if (arguments.Length < commandEntity.Arguments.Where(argument => argument.IsRequired).Count())
                 throw new CommandArgumentException(commandEntity);
@@ -210,6 +226,14 @@ namespace CommandParser.Command
     }
     #endregion
     #region Исключения
+    /// <summary>
+    /// Исключение пустой команды
+    /// </summary>
+    public class EmptyCommandException : Exception
+    {
+        public override string Message => "Команда пуста";
+    }
+
     /// <summary>
     /// Исключение неизвестной команды
     /// </summary>
