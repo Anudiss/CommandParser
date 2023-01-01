@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -145,7 +146,8 @@ namespace CommandParser.Command
     public static class CommandParser
     {
         #region Паттерны
-        public static Regex TokenPattern = new Regex(@"(?:\s*(?:([\u0022](?<Text>[^\u0022]*)[\u0022])\s*)|(?:\s*(?<Text>[^\s]+)\s*))+", RegexOptions.Compiled);
+        public static readonly Regex TokenPattern = new Regex(@"(?:(?:\s*(?<Token>[^\u0022\(\) ]+)\s*\,?\s*)|(?:\s*(?:[\u0022](?<Token>[^\u0022]*)[\u0022])\s*\,?\s*)|(?:\s*(?<Token>[\(].+[\)])\s*))+", RegexOptions.Compiled);
+        public static readonly Regex ArgumentPattern = new Regex(@"(?:(?:\s*(?<Text>[^\u0022\(\) ]+)\s*\,?\s*)|(?:\s*(?:[\u0022](?<Text>[^\u0022]*)[\u0022])\s*\,?\s*)|(?:\s*[\(](?<Tuple>.+)[\)]\s*\,?\s*))+", RegexOptions.Compiled);
         #endregion
 
         /// <summary>
@@ -159,7 +161,7 @@ namespace CommandParser.Command
             // Text regex - @"(?<Text>[^\u0022]+)|([\u0022](?<Text>[^\u0022]*)[\u0022])"
             // Array regex - ^[^\[\]]*(((?'Open'\[)[^\[\]]*)+((?'Array-Open'\])[^\[\]]*)+)*(?(Open)(?!))$
 
-            var tokens = DoLexicalAnalyze(commandToParse.Trim());
+            var tokens = Tokenize(commandToParse.Trim());
             string commandName = tokens.FirstOrDefault();
             if (commandName == null)
                 throw new EmptyCommandException();
@@ -179,24 +181,29 @@ namespace CommandParser.Command
         /// </summary>
         /// <param name="command">Строковая команда</param>
         /// <returns>Перечисление, состоящее из частей команды</returns>
-        public static IEnumerable<string> DoLexicalAnalyze(string command) =>
-            TokenPattern.Match(command).Groups["Text"].Captures.Cast<Capture>().Select(capture => capture.Value.Trim());
+        public static IEnumerable<string> Tokenize(string command) =>
+            TokenPattern.Match(command).Groups["Token"].Captures
+                        .Cast<Capture>()
+                        .Select(capture => capture.Value.Trim());
 
         /// <summary>
         /// Метод парсинга аргументов из команды в строковом формате
         /// </summary>
         /// <param name="commandEntity">Структура команды</param>
-        /// <param name="commadParts">Части команды, разделённые пробельныим символами, без названия команды</param>
+        /// <param name="commandParts">Части команды, разделённые пробельныим символами, без названия команды</param>
         /// <returns>Словарь: имя аргумента - значение</returns>
-        private static Dictionary<string, object> ParseArguments(this CommandEntity commandEntity, IEnumerable<string> commadParts)
+        private static Dictionary<string, object> ParseArguments(this CommandEntity commandEntity, IEnumerable<string> commandParts)
         {
             if (commandEntity.Arguments == null)
                 return null;
 
-            string[] arguments = commadParts.Where(part => !Regex.IsMatch(part, @"-{1,2}\w+"))
-                                            .ToArray();
+            string[] arguments = commandParts.Where(part => !Regex.IsMatch(part, @"-{1,2}\w+"))
+                                             .ToArray();
             if (arguments.Length < commandEntity.Arguments.Where(argument => argument.IsRequired).Count())
                 throw new CommandArgumentException(commandEntity);
+
+            if (arguments.Length > commandEntity.Arguments.Length)
+                throw new TooManyArgumentsException();
 
             Dictionary<string, object> argumentValues = new Dictionary<string, object>();
             for (int i = 0; i < arguments.Length; i++)
@@ -284,6 +291,22 @@ namespace CommandParser.Command
 
         public ArgumentNameException(params Argument[] arguments) =>
             Message = $"Аргументы с именами {string.Join(", ", arguments.Select(argument => argument.Name))} уже есть в этой команде";
+    }
+
+    /// <summary>
+    /// Исключение, слишком много аргументов команды
+    /// </summary>
+    public class TooManyArgumentsException : Exception
+    {
+        public override string Message => $"Команда не принимает столько агрументов";
+    }
+
+    /// <summary>
+    /// Исклчючение, слишком много элементов в кортеже
+    /// </summary>
+    public class TooManyTupleElementsException : Exception
+    {
+        public override string Message => $"Кортеж не принимает столько элементов";
     }
     #endregion
 }

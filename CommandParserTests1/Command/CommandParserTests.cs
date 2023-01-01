@@ -1,7 +1,6 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.InteropServices;
 
 namespace CommandParser.Command.Tests
 {
@@ -62,7 +61,7 @@ namespace CommandParser.Command.Tests
             };
 
             // Act
-            string[] actual = CommandParser.DoLexicalAnalyze(Input).ToArray();
+            string[] actual = CommandParser.Tokenize(Input).ToArray();
 
             // Assert
             Assert.AreEqual(excepted.Count(), actual.Count());

@@ -4,7 +4,7 @@ namespace CommandParser.Command
 {
     public static class BaseArgumentTypes
     {
-        public static ArgumentType Int = new ArgumentType()
+        public static readonly ArgumentType Int = new ArgumentType()
         {
             Name = "Int",
             ArgumentParsingRegex = new Regex(@"\d+", RegexOptions.Compiled),
@@ -12,7 +12,7 @@ namespace CommandParser.Command
             Validator = (arg) => true
         };
 
-        public static ArgumentType String = new ArgumentType()
+        public static readonly ArgumentType String = new ArgumentType()
         {
             Name = "String",
             ArgumentParsingRegex = new Regex(@".+", RegexOptions.Compiled),
@@ -20,7 +20,7 @@ namespace CommandParser.Command
             Validator = (arg) => true
         };
 
-        public static ArgumentType Double = new ArgumentType()
+        public static readonly ArgumentType Double = new ArgumentType()
         {
             Name = "Double",
             ArgumentParsingRegex = new Regex(@"\d+([\,\.]\d+)?", RegexOptions.Compiled),

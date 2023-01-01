@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Linq;
 using System.Text.RegularExpressions;
 
 namespace CommandParser.Command
@@ -16,17 +19,17 @@ namespace CommandParser.Command
         /// <summary>
         /// Регулярное выражение для парсинга агрумента
         /// </summary>
-        public Regex ArgumentParsingRegex { get; set; }
+        public Regex ArgumentParsingRegex { get; set; } = null;
 
         /// <summary>
         /// Предикат, проверяющий на правильность ввода аргумента
         /// </summary>
-        public bool IsValid(string argument) => ArgumentParsingRegex.IsMatch(argument.Trim()) && Validator?.Invoke(argument.Trim()) == true;
+        public bool IsValid(string argument) => ArgumentParsingRegex?.IsMatch(argument.Trim()) != false && Validator?.Invoke(argument.Trim()) != false;
 
         /// <summary>
         /// Метод парсинга аргумента
         /// </summary>
-        public Func<string, object> Parse { get; set; }
+        public virtual Func<string, object> Parse { get; set; }
 
         /// <summary>
         /// Предикат валидации агрумента
@@ -34,8 +37,62 @@ namespace CommandParser.Command
         public Predicate<object> Validator { get; set; }
     }
 
-    public class ArrayArgument
+    public class TupleType : ArgumentType
     {
-        public object[] Array { get; set; }
+        public Argument[] TypesInside { get; set; }
+
+        public override Func<string, object> Parse => ParseTupleElements;
+
+        private object ParseTupleElements(string argument)
+        {
+            Dictionary<string, object> tupleElements = new Dictionary<string, object>();
+
+            Match match = CommandParser.TokenPattern.Match(argument.Substring(1, argument.Length - 2));
+            if (!match.Success)
+                throw new ArgumentTypeException(new Argument()
+                {
+                    ArgumentType = this,
+                    Name = Name
+                });
+
+            IEnumerator<Capture> textEnumerator = match.Groups["Token"].Captures.Cast<Capture>().GetEnumerator();
+            var arguments = TypesInside.Where(arg => textEnumerator.MoveNext())
+                                       .Select(arg => new KeyValuePair<string, object>(arg.Name, arg.Parse(Regex.Replace(textEnumerator.Current.Value, @",$", ""))));
+
+            foreach (var arg in arguments)
+                tupleElements.Add(arg.Key, arg.Value);
+
+            return tupleElements;
+        }
+    }
+
+    public class Array : ArgumentType
+    {
+        public ArgumentType TypeInside { get; }
+        public override Func<string, object> Parse => ParseArrayElements;
+
+        public Array(ArgumentType typeInside)
+        {
+            TypeInside = typeInside;
+        }
+
+        private object ParseArrayElements(string argument)
+        {
+            ArrayList array = new ArrayList();
+
+            Match match = CommandParser.TokenPattern.Match(argument.Substring(1, argument.Length - 2));
+            if (!match.Success)
+                throw new ArgumentTypeException(new Argument()
+                {
+                    ArgumentType = this,
+                    Name = Name
+                });
+
+            IEnumerable<Capture> elements = match.Groups["Token"].Captures.Cast<Capture>();
+            foreach (var element in elements)
+                array.Add(TypeInside.Parse(Regex.Replace(element.Value, @",$", "")));
+
+            return array.ToArray();
+        }
     }
 }
