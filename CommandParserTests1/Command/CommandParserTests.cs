@@ -1,6 +1,7 @@
 ﻿using Microsoft.VisualStudio.TestTools.UnitTesting;
 using System.Collections.Generic;
 using System.Linq;
+using Array = CommandParser.Command.Array;
 
 namespace CommandParser.Command.Tests
 {
@@ -11,62 +12,86 @@ namespace CommandParser.Command.Tests
         {
             new CommandEntity()
             {
-                Synonyms = new[] { "help", "h" },
+                Synonyms = new[] { "print" },
+                Arguments = new[]
+                {
+                    new Argument()
+                    {
+                        Name = "message",
+                        ArgumentType = BaseArgumentTypes.String
+                    }
+                }
+            },
+            new CommandEntity()
+            {
+                Synonyms = new[] { "parsingTest" },
                 Arguments = new[]
                 {
                     new Argument()
                     {
                         Name = "Age",
-                        ArgumentType = BaseArgumentTypes.Int,
-                        IsRequired = true
+                        ArgumentType = BaseArgumentTypes.Int
                     },
                     new Argument()
                     {
-                        Name = "Height",
-                        ArgumentType = BaseArgumentTypes.Double,
-                        IsRequired = true
-                    },
-                    new Argument()
-                    {
-                        Name = "Text",
-                        ArgumentType = BaseArgumentTypes.String,
-                        IsRequired = false
-                    }
-                },
-                Flags = new[]
-                {
-                    new Flag()
-                    {
-                        Name = "help",
-                        Shortname = "h"
-                    },
-                    new Flag()
-                    {
-                        Name = "dick",
-                        Shortname = "d"
+                        Name = "Scores",
+                        ArgumentType = new Array(new TupleType()
+                                                 {
+                                                    TypesInside = new[]
+                                                    {
+                                                        new Argument()
+                                                        {
+                                                            Name = "Name",
+                                                            ArgumentType = BaseArgumentTypes.String
+                                                        },
+                                                        new Argument()
+                                                        {
+                                                            Name = "Score",
+                                                            ArgumentType = BaseArgumentTypes.Double
+                                                        }
+                                                    }
+                                                 })
+                        {
+                            Name = "NameScoreArray",
+                            Validator = (arg) => true
+                        }
                     }
                 }
             }
         };
 
-        public static readonly string Input = $"  help  -d  23   --help  93,332  {'\u0022'}  Hello  World   !{'\u0022'}";
-
+        [TestMethod()]
+        public void TestTokenPattern()
+        {
+            // User input
+            string input = "parsingTest 18 [()]";
+        }
+        
         [TestMethod()]
         public void DoLexicalAnalyzeTest()
         {
-            // Arrange
-            string[] excepted = new[]
-            {
-                "help", "-d", "23", "--help", "93,332", "Hello  World   !"
-            };
+            // User input
+            string input = "print \"Hello World,  2!\"";
+
+            // Excepted
+            Command excepted = new Command(commandEntity: Entities.First(),
+                                           arguments: new Dictionary<string, object>()
+                                           {
+                                               { "message", "Hello World,  2!" }
+                                           },
+                                           flags: System.Array.Empty<Flag>());
 
             // Act
-            string[] actual = CommandParser.Tokenize(Input).ToArray();
+            Command act = Entities.ParseCommand(input);
 
             // Assert
-            Assert.AreEqual(excepted.Count(), actual.Count());
-            for (int i = 0; i < excepted.Length; i++)
-                Assert.IsTrue(excepted[i] == actual[i]);
+            Assert.IsTrue(excepted.CommandEntity == act.CommandEntity, "Неверно определена структура команды");
+            
+            foreach (var exceptedArgument in excepted.Arguments)
+            {
+                Assert.IsTrue(act.Arguments.ContainsKey(exceptedArgument.Key), $"Не определён аргумент {exceptedArgument.Key}");
+                Assert.IsTrue(act.Arguments[exceptedArgument.Key] == exceptedArgument.Value, $"Значение аргумента было {act.Arguments[exceptedArgument.Key]}, ожидалось {exceptedArgument.Value}");
+            }
         }
     }
 }

@@ -63,16 +63,65 @@ namespace ParserTest
                     Flags = System.Array.Empty<Flag>(),
                     CommandExecutor = (arguments, flags) =>
                     {
-
+                        return null;
                     },
                     Arguments = new[]
                     {
                         new Argument()
                         {
                             Name = "Numbers",
-                            ArgumentType = new Array(BaseArgumentTypes.String)
+                            ArgumentType = new Array(BaseArgumentTypes.Double)
                             {
                                 Name = "DoubleArray",
+                                Validator = (arg) => true
+                            }
+                        }
+                    }
+                },
+                new CommandEntity()
+                {
+                    Synonyms = new[] { "print" },
+                    Arguments = new[]
+                    {
+                        new Argument()
+                        {
+                            Name = "message",
+                            ArgumentType = BaseArgumentTypes.String
+                        }
+                    }
+                },
+                new CommandEntity()
+                {
+                    Synonyms = new[] { "test" },
+                    Arguments = new[]
+                    {
+                        new Argument()
+                        {
+                            Name = "Age",
+                            ArgumentType = BaseArgumentTypes.Int
+                        },
+                        new Argument()
+                        {
+                            Name = "Scores",
+                            ArgumentType = new Array(new TupleType()
+                            {
+                                Name = "Scores",
+                                TypesInside = new[]
+                                {
+                                    new Argument()
+                                    {
+                                        Name = "Name",
+                                        ArgumentType = BaseArgumentTypes.String
+                                    },
+                                    new Argument()
+                                    {
+                                        Name = "Score",
+                                        ArgumentType = BaseArgumentTypes.Double
+                                    }
+                                }
+                            })
+                            {
+                                Name = "NameScoreArray",
                                 Validator = (arg) => true
                             }
                         }
@@ -88,9 +137,22 @@ namespace ParserTest
             Console.WriteLine($"Second: {tuple1["SecondNumber"]}");
             Console.WriteLine($"Third: {tuple1["aSD"]}");*/
 
-            Command command = entities.ParseCommand("new   (Alexander,\"Hello, World!\")");
-            Console.WriteLine($"{string.Join(", ", command.Arguments)}");
-            Console.WriteLine($"{string.Join(", ", (command.Arguments["Numbers"] as object[]).Cast<string>())}");
+            while (true)
+            {
+                Console.Clear();
+                try
+                {
+                    Command command = entities.ParseCommand(Console.ReadLine().Trim());
+                    Console.WriteLine($"{string.Join(", ", command.Arguments)}");
+                    foreach (var array in ((object[])command.Arguments["Numbers"]).Cast<double>())
+                        Console.WriteLine($"{array}");
+                }
+                catch(Exception e)
+                {
+                    Console.WriteLine(e.Message);
+                }
+                Console.ReadKey();
+            }
         }
     }
 }

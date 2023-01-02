@@ -18,5 +18,14 @@ namespace CommandParser
                 }
             }
         }
+
+        public static void ForEach<T>(this IEnumerable<T> values, Action<T> action)
+        {
+            if (action == null)
+                throw new ArgumentNullException();
+
+            foreach (T item in values)
+                action(item);
+        }
     }
 }

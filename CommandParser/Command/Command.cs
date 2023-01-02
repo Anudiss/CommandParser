@@ -12,7 +12,7 @@ namespace CommandParser.Command
     /// </summary>
     /// <param name="arguments">Словарь: название аргумента - его значение</param>
     /// <param name="flags">Флаги, введёные пользователем</param>
-    public delegate void CommandExecutHandler(Dictionary<string, object> arguments, Flag[] flags);
+    public delegate object CommandExecutHandler(Dictionary<string, object> arguments, Flag[] flags);
     #endregion
     #region Сущность команды
     /// <summary>
@@ -146,8 +146,16 @@ namespace CommandParser.Command
     public static class CommandParser
     {
         #region Паттерны
-        public static readonly Regex TokenPattern = new Regex(@"(?:(?:\s*(?<Token>[^\u0022\(\) ]+)\s*\,?\s*)|(?:\s*(?:[\u0022](?<Token>[^\u0022]*)[\u0022])\s*\,?\s*)|(?:\s*(?<Token>[\(].+[\)])\s*))+", RegexOptions.Compiled);
-        public static readonly Regex ArgumentPattern = new Regex(@"(?:(?:\s*(?<Text>[^\u0022\(\) ]+)\s*\,?\s*)|(?:\s*(?:[\u0022](?<Text>[^\u0022]*)[\u0022])\s*\,?\s*)|(?:\s*[\(](?<Tuple>.+)[\)]\s*\,?\s*))+", RegexOptions.Compiled);
+        // Старый паттерн агрумента (?:(?:\s*(?<Text>[^\u0022\(\) ]+)\s*\,?\s*)|(?:\s*(?:[\u0022](?<Text>[^\u0022]*)[\u0022])\s*\,?\s*)|(?:\s*[\(](?<Tuple>.+)[\)]\s*\,?\s*))+
+        /*public static readonly Regex TokenPattern = new Regex(@"(?:(?:\s*(?<Token>[^\u0022\(\)\[\] ]+)\s*\,?\s*)|(?:\s*(?:[\(\u0022](?<Token>[^\u0022\(\)\[\]]*)[\u0022])\s*\,?\s*)|(?:\s*[\(\[](?<Token>.+)[\)\]]\s*\,?\s*))+", RegexOptions.Compiled);
+        public static readonly Regex ArgumentPattern = new Regex(@"(?:(?:\s*(?<Text>[^\u0022\(\)\[\] ]+)\s*\,?\s*)|(?:\s*(?:[\(\u0022](?<Text>[^\u0022\(\)\[\]]*)[\u0022])\s*\,?\s*)|(?:\s*[\(\[](?<Tuple>.+)[\)\]]\s*\,?\s*))+", RegexOptions.Compiled);
+        public static readonly Regex ArrayPattern = new Regex(@"\[(?>\u0022(?:[^\u0022\\]|\\.)*\u0022|\[(?<DEPTH>)|\](?<-DEPTH>)|\u0022(?:[^\u0022\\]|\\.)*\u0022|[^\[\]]+)*\](?(DEPTH)(?!))", RegexOptions.Compiled);
+        public static readonly Regex TuplePattern = new Regex(@"\((?>\u0022(?:[^\u0022\\]|\\.)*\u0022|\((?<DEPTH>)|\)(?<-DEPTH>)|\u0022(?:[^\u0022\\]|\\.)*\u0022|[^\(\)]+)*\)(?(DEPTH)(?!))", RegexOptions.Compiled);*/
+        public static readonly Regex ArgumentPattern = new Regex(@"(?<Token>[^\,\s]+)", RegexOptions.Compiled);
+        public static readonly Regex TextPattern = new Regex(@"(?:\u0022(?<Token>[^\u0022]+)\u0022)", RegexOptions.Compiled);
+        public static readonly Regex TuplePattern = new Regex(@"(?<Token>\((?>\u0022(?:[^\u0022\\]|\\.)*\u0022|\((?<DEPTH>)|\)(?<-DEPTH>)|\u0022(?:[^\u0022\\]|\\.)*\u0022|[^\(\)]+)*\)(?(DEPTH)(?!)))", RegexOptions.Compiled);
+        public static readonly Regex ArrayPattern = new Regex(@"(?<Token>\[(?>\u0022(?:[^\u0022\\]|\\.)*\u0022|\[(?<DEPTH>)|\](?<-DEPTH>)|\u0022(?:[^\u0022\\]|\\.)*\u0022|[^\[\]]+)*\](?(DEPTH)(?!)))", RegexOptions.Compiled);
+        public static readonly Regex GeneralPattern = new Regex($@"(?:(?:{ArrayPattern}|{TuplePattern}|{TextPattern}|{ArgumentPattern})\s*\,?\s*)+", RegexOptions.Compiled);
         #endregion
 
         /// <summary>
@@ -182,9 +190,9 @@ namespace CommandParser.Command
         /// <param name="command">Строковая команда</param>
         /// <returns>Перечисление, состоящее из частей команды</returns>
         public static IEnumerable<string> Tokenize(string command) =>
-            TokenPattern.Match(command).Groups["Token"].Captures
-                        .Cast<Capture>()
-                        .Select(capture => capture.Value.Trim());
+            GeneralPattern.Match(command).Groups["Token"].Captures
+                          .Cast<Capture>()
+                          .Select(capture => capture.Value.Trim());
 
         /// <summary>
         /// Метод парсинга аргументов из команды в строковом формате
@@ -199,6 +207,7 @@ namespace CommandParser.Command
 
             string[] arguments = commandParts.Where(part => !Regex.IsMatch(part, @"-{1,2}\w+"))
                                              .ToArray();
+
             if (arguments.Length < commandEntity.Arguments.Where(argument => argument.IsRequired).Count())
                 throw new CommandArgumentException(commandEntity);
 

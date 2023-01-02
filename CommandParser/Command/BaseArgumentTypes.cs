@@ -23,7 +23,7 @@ namespace CommandParser.Command
         public static readonly ArgumentType Double = new ArgumentType()
         {
             Name = "Double",
-            ArgumentParsingRegex = new Regex(@"\d+([\,\.]\d+)?", RegexOptions.Compiled),
+            ArgumentParsingRegex = new Regex(@"\d+([\,\.]\d+)?$", RegexOptions.Compiled),
             Parse = (arg) => double.Parse(arg.ToString().Replace('.', ',')),
             Validator = (arg) => true
         };

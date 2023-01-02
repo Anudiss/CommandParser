@@ -41,13 +41,11 @@ namespace CommandParser.Command
     {
         public Argument[] TypesInside { get; set; }
 
-        public override Func<string, object> Parse => ParseTupleElements;
-
-        private object ParseTupleElements(string argument)
+        public override Func<string, object> Parse => (argument) =>
         {
             Dictionary<string, object> tupleElements = new Dictionary<string, object>();
 
-            Match match = CommandParser.TokenPattern.Match(argument.Substring(1, argument.Length - 2));
+            Match match = CommandParser.GeneralPattern.Match(argument.Substring(1, argument.Length - 2));
             if (!match.Success)
                 throw new ArgumentTypeException(new Argument()
                 {
@@ -56,31 +54,22 @@ namespace CommandParser.Command
                 });
 
             IEnumerator<Capture> textEnumerator = match.Groups["Token"].Captures.Cast<Capture>().GetEnumerator();
-            var arguments = TypesInside.Where(arg => textEnumerator.MoveNext())
-                                       .Select(arg => new KeyValuePair<string, object>(arg.Name, arg.Parse(Regex.Replace(textEnumerator.Current.Value, @",$", ""))));
-
-            foreach (var arg in arguments)
-                tupleElements.Add(arg.Key, arg.Value);
+            TypesInside.Where(arg => textEnumerator.MoveNext())
+                       .Select(arg => new KeyValuePair<string, object>(arg.Name, arg.Parse(Regex.Replace(textEnumerator.Current.Value, @",$", ""))))
+                       .ForEach(arg => tupleElements.Add(arg.Key, arg.Value));
 
             return tupleElements;
-        }
+        };
     }
 
     public class Array : ArgumentType
     {
         public ArgumentType TypeInside { get; }
-        public override Func<string, object> Parse => ParseArrayElements;
-
-        public Array(ArgumentType typeInside)
-        {
-            TypeInside = typeInside;
-        }
-
-        private object ParseArrayElements(string argument)
+        public override Func<string, object> Parse => (argument) =>
         {
             ArrayList array = new ArrayList();
 
-            Match match = CommandParser.TokenPattern.Match(argument.Substring(1, argument.Length - 2));
+            Match match = CommandParser.GeneralPattern.Match(argument.Substring(1, argument.Length - 2));
             if (!match.Success)
                 throw new ArgumentTypeException(new Argument()
                 {
@@ -93,6 +82,11 @@ namespace CommandParser.Command
                 array.Add(TypeInside.Parse(Regex.Replace(element.Value, @",$", "")));
 
             return array.ToArray();
+        };
+
+        public Array(ArgumentType typeInside)
+        {
+            TypeInside = typeInside;
         }
     }
 }
